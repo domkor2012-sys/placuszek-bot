@@ -2,8 +2,8 @@ const mineflayer = require('mineflayer');
 
 function createBot() {
     const bot = mineflayer.createBot({
-        host: 'placuszekcraftsmp.falix.gg',
-        port: 25565,
+        host: 'placuszekcraftsmp.play.hosting',
+        port: 65096,
         username: 'BOTEK',
         version: '1.21.11'
     });
