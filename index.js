@@ -1,66 +1,51 @@
 const mineflayer = require('mineflayer');
+const http = require('http');
+
+// 1. Serwer dla Rendera (żeby nie wyłączał bota)
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("Bot is running!");
+}).listen(process.env.PORT || 10000);
 
 function createBot() {
     const bot = mineflayer.createBot({
         host: 'placuszekcraftsmp.play.hosting',
-        port: 65096,
-        username: 'BOTEK',
-        version: '1.21.11'
+        port: 65096, // <--- WPISZ TU AKTUALNY PORT Z PANELU!
+        username: 'BOTEK_AFK',
+        version: '1.21.1', // Spróbujmy tej wersji dla lepszej stabilności
+        auth: 'offline'
     });
 
-    bot.on('login', () => {
-        console.log('✅ Zalogowano jako BOTEK');
+    bot.on('login', () => console.log('✅ Zalogowano do serwera!'));
+    
+    bot.on('message', (jsonMsg) => {
+        const msg = jsonMsg.toString();
+        if (msg.includes('/login')) {
+            bot.chat('/login AFK_1234');
+            console.log('>>> Wysłano hasło.');
+        }
     });
 
     bot.on('spawn', () => {
-        console.log('🎮 Bot wszedł na serwer');
-
-        // logowanie
-        setTimeout(() => {
-            bot.chat('/login AFK_1234');
-        }, 3000);
-
-        // ANTY AFK - bardziej "ludzki"
+        console.log('🎮 Bot jest na serwerze!');
+        // Anty-AFK: skok co 30s
         setInterval(() => {
-            const actions = ['forward', 'back', 'left', 'right'];
-            const action = actions[Math.floor(Math.random() * actions.length)];
-
-            bot.setControlState(action, true);
-
-            setTimeout(() => {
-                bot.setControlState(action, false);
-            }, 2000 + Math.random() * 2000);
-
-            // czasem skok
-            if (Math.random() < 0.3) {
-                bot.setControlState('jump', true);
-                setTimeout(() => bot.setControlState('jump', false), 500);
-            }
-
-        }, 12000 + Math.random() * 8000);
-
-        // patrzenie się losowo
-        setInterval(() => {
-            bot.look(
-                Math.random() * Math.PI * 2,
-                (Math.random() - 0.5) * Math.PI
-            );
-        }, 8000 + Math.random() * 5000);
+            bot.setControlState('jump', true);
+            setTimeout(() => bot.setControlState('jump', false), 500);
+        }, 30000);
     });
 
-    // respawn
-    bot.on('death', () => {
-        console.log('☠️ Respawn');
-        bot.emit('respawn');
+    bot.on('error', err => {
+        console.log('❌ Błąd:', err.message);
+        if (err.message.includes('ECONNREFUSED')) {
+            console.log('!!! PORT JEST ZABLOKOWANY LUB ZŁY !!!');
+        }
     });
 
-    // reconnect
     bot.on('end', () => {
-        console.log('❌ Rozłączono - reconnect...');
-        setTimeout(createBot, 5000);
+        console.log('🔄 Rozłączono. Próba powrotu za 10s...');
+        setTimeout(createBot, 10000);
     });
-
-    bot.on('error', err => console.log('Błąd:', err));
 }
 
 createBot();
